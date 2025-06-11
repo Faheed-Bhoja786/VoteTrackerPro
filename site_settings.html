@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Site Settings - Muslim Bhadala Jamaat Elections 2025</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --theme-color: {{ settings.theme_color|default('#0d6efd') }};
+      --theme-color-light: {{ settings.theme_color|default('#0d6efd') }}40; /* 25% opacity */
+      --theme-color-dark: {{ settings.theme_color|default('#0d6efd') }}dd; /* 85% opacity */
+    }
+
+    body {
+      font-family: 'Poppins', sans-serif;
+      text-align: center;
+      background: #f8f9fa;
+      padding: 20px;
+      margin: 0;
+      color: #333;
+    }
+    
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+    
+    h1 {
+      color: var(--theme-color-dark, #1a5276);
+      margin-bottom: 5px;
+    }
+    
+    h2 {
+      color: var(--theme-color, #2874a6);
+      margin-top: 30px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+    
+    input[type="text"], 
+    input[type="password"],
+    input[type="number"],
+    textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    
+    textarea {
+      min-height: 80px;
+      resize: vertical;
+    }
+    
+    button, .button {
+      background: var(--theme-color, #2874a6);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      margin: 10px 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    button:hover, .button:hover {
+      background: var(--theme-color-dark, #1a5276);
+    }
+    
+    .control-form {
+      max-width: 400px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      background: #f9f9f9;
+    }
+    
+    .control-form h3 {
+      margin-top: 0;
+      color: var(--theme-color, #2874a6);
+    }
+    
+    .hint {
+      font-size: 0.85em;
+      color: #666;
+      margin-top: 5px;
+    }
+    
+    .current-image {
+      margin: 15px 0;
+      padding: 10px;
+      border: 1px dashed #ddd;
+      border-radius: 5px;
+    }
+    
+    .current-image img {
+      max-width: 200px;
+      max-height: 100px;
+      margin: 10px 0;
+    }
+    
+    .form-group {
+      margin-bottom: 20px;
+      text-align: left;
+    }
+    
+    .button-group {
+      margin-top: 30px;
+    }
+    
+    .thumbnail {
+      max-width: 100px;
+      max-height: 100px;
+    }
+    
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Admin Dashboard</h1>
+    
+    <a href="{{ url_for('admin_logout') }}" class="button" style="position: absolute; top: 20px; right: 20px;">Logout</a>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+    
+    <h2>Site Settings</h2>
+    <p>Customize the title, subtitle, and logo displayed on the voting page</p>
+
+    <div class="control-form">
+      <form method="POST" enctype="multipart/form-data">
+        <div class="form-group">
+          <label for="site_title">Main Title:</label>
+          <input type="text" id="site_title" name="site_title" value="{{ settings.site_title }}" required>
+          <p class="hint">The main heading displayed on the voting page (e.g., MUSLIM BHADALA JAMAAT)</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="site_subtitle">Subtitle:</label>
+          <input type="text" id="site_subtitle" name="site_subtitle" value="{{ settings.site_subtitle }}" required>
+          <p class="hint">The subtitle displayed below the main title (e.g., CHAIRMAN ELECTIONS 2025)</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="logo_file">Main Logo:</label>
+          <div class="current-image">
+            <p>Current logo:</p>
+            <img src="{{ url_for('static', filename=settings.logo_path) }}" alt="Current Logo" class="thumbnail">
+            <p style="margin-top: 10px;">{{ settings.logo_path }}</p>
+          </div>
+          <input type="file" id="logo_file" name="logo_file" accept="image/*">
+          <p class="hint">Upload a new logo to replace the current one. Recommended size: 240x120 pixels.</p>
+        </div>
+        
+        <div class="form-group">
+          <label for="theme_color">Theme Color (Admin Panel Only):</label>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <input type="color" id="theme_color" name="theme_color" value="{{ settings.theme_color }}" style="width: 50px; height: 50px;">
+            <span id="color-preview" style="display: inline-block; padding: 10px 20px; border-radius: 5px; background-color: {{ settings.theme_color }}; color: white;">Preview Color</span>
+          </div>
+          <p class="hint">This color is saved for future use but is currently not applied to the site design.</p>
+        </div>
+        
+        <div class="button-group">
+          <button type="submit">Save Changes</button>
+          <a href="{{ url_for('admin_dashboard') }}" class="button" style="background-color: #6c757d;">Cancel</a>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <script>
+    // Update color preview when the color picker changes
+    document.getElementById('theme_color').addEventListener('input', function() {
+      const colorValue = this.value;
+      const preview = document.getElementById('color-preview');
+      preview.style.backgroundColor = colorValue;
+      
+      // Update text color based on contrast
+      const rgb = hexToRgb(colorValue);
+      const brightness = Math.round(((rgb.r * 299) + (rgb.g * 587) + (rgb.b * 114)) / 1000);
+      const textColor = (brightness > 125) ? 'black' : 'white';
+      preview.style.color = textColor;
+    });
+    
+    // Convert hex color to RGB
+    function hexToRgb(hex) {
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    }
+  </script>
+</body>
+</html>

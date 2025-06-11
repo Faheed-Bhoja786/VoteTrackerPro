@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Parties</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" crossorigin="anonymous">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container pt-4">
+        <h1 class="text-center mb-4">Manage Parties</h1>
+        
+        <div class="alert alert-info">
+            <h5>Instructions:</h5>
+            <ul>
+                <li>Add or remove parties using the buttons below</li>
+                <li>For each party, provide a name and optionally upload an image</li>
+                <li>Add party members with their positions to display on winner announcement</li>
+                <li>Changes will only be saved when you submit the form</li>
+            </ul>
+        </div>
+        
+        <div id="flash-messages">
+            {% for category, message in get_flashed_messages(with_categories=true) %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <form id="parties-form" method="POST" enctype="multipart/form-data">
+            <div id="parties-container">
+                {% for party_name, party_data in parties.items() %}
+                <div class="card mb-4 party-card" data-party-index="{{ loop.index0 }}">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Party {{ loop.index }}</h5>
+                        <button type="button" class="btn btn-sm btn-danger remove-party" data-party-index="{{ loop.index0 }}">
+                            Remove
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="party_name_{{ loop.index0 }}" class="form-label">Party Name</label>
+                                <input type="text" class="form-control" id="party_name_{{ loop.index0 }}" name="party_name_{{ loop.index0 }}" value="{{ party_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="party_image_{{ loop.index0 }}" class="form-label">Party Image</label>
+                                <input type="file" class="form-control" id="party_image_{{ loop.index0 }}" name="party_image_{{ loop.index0 }}" accept="image/*">
+                                <small class="text-muted">Current image: {{ party_data.image }}</small>
+                                
+                                <div class="mt-2">
+                                    <img src="/static/{{ party_data.image }}" alt="{{ party_name }}" style="max-height: 100px; max-width: 100px;">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Party Members Section -->
+                        <div class="party-members mt-4">
+                            <h6>Party Members</h6>
+                            <small class="text-muted mb-2 d-block">These members will be displayed if this party wins</small>
+                            
+                            <div class="party-members-list" id="members_list_{{ loop.index0 }}">
+                                <!-- Members will be loaded here via AJAX -->
+                            </div>
+                            
+                            <div class="row g-2 mt-2">
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control member-name" placeholder="Member Name" 
+                                        id="new_member_name_{{ loop.index0 }}">
+                                </div>
+                                <div class="col-md-5">
+                                    <input type="text" class="form-control member-position" placeholder="Position" 
+                                        id="new_member_position_{{ loop.index0 }}">
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="button" class="btn btn-outline-success w-100 add-member-btn" 
+                                        data-party-name="{{ party_name }}" data-party-index="{{ loop.index0 }}">Add</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">Current Vote Count: {{ vote_counts.get(party_name, 0) }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <div class="d-flex justify-content-between mb-4">
+                <button type="button" id="add-party" class="btn btn-success">Add Another Party</button>
+                <button type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+            
+            <input type="hidden" id="party_count" name="party_count" value="{{ current_party_count }}">
+        </form>
+        
+        <div class="d-flex justify-content-between mt-4">
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">Back to Dashboard</a>
+        </div>
+    </div>
+
+    <!-- Templates for JavaScript -->
+    <template id="party-template">
+        <div class="card mb-4 party-card" data-party-index="{index}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Party {partyNumber}</h5>
+                <button type="button" class="btn btn-sm btn-danger remove-party" data-party-index="{index}">
+                    Remove
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="party_name_{index}" class="form-label">Party Name</label>
+                        <input type="text" class="form-control" id="party_name_{index}" name="party_name_{index}" required>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="party_image_{index}" class="form-label">Party Image</label>
+                        <input type="file" class="form-control" id="party_image_{index}" name="party_image_{index}" accept="image/*">
+                    </div>
+                </div>
+                
+                <!-- Party Members Section -->
+                <div class="party-members mt-4">
+                    <h6>Party Members</h6>
+                    <small class="text-muted mb-2 d-block">These members will be displayed if this party wins</small>
+                    
+                    <div class="party-members-list" id="members_list_{index}">
+                        <!-- Members will be loaded here -->
+                    </div>
+                    
+                    <div class="row g-2 mt-2">
+                        <div class="col-md-5">
+                            <input type="text" class="form-control member-name" placeholder="Member Name" 
+                                id="new_member_name_{index}">
+                        </div>
+                        <div class="col-md-5">
+                            <input type="text" class="form-control member-position" placeholder="Position" 
+                                id="new_member_position_{index}">
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-outline-success w-100 add-member-btn" 
+                                data-party-index="{index}">Add</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <template id="member-template">
+        <div class="member-item card mb-2">
+            <div class="card-body p-2">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong class="member-name-text">{name}</strong> - 
+                        <span class="member-position-text">{position}</span>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger remove-member-btn" 
+                        data-member-id="{id}">Remove</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js" crossorigin="anonymous"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            let partyCount = parseInt(document.getElementById('party_count').value);
+            
+            // Load all party members initially
+            document.querySelectorAll('.party-card').forEach(partyCard => {
+                const partyIndex = partyCard.dataset.partyIndex;
+                const partyName = document.getElementById(`party_name_${partyIndex}`).value;
+                loadPartyMembers(partyName, partyIndex);
+            });
+            
+            // Add a new party
+            document.getElementById('add-party').addEventListener('click', function() {
+                const template = document.getElementById('party-template').innerHTML;
+                const newParty = template
+                    .replace(/{index}/g, partyCount)
+                    .replace(/{partyNumber}/g, partyCount + 1);
+                
+                const container = document.getElementById('parties-container');
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = newParty;
+                container.appendChild(tempDiv.firstElementChild);
+                
+                // Update party count
+                partyCount++;
+                document.getElementById('party_count').value = partyCount;
+                
+                // Setup event handlers for the new party card
+                setupPartyCardEvents(document.querySelector(`.party-card[data-party-index="${partyCount - 1}"]`));
+            });
+            
+            // Remove a party
+            document.querySelectorAll('.remove-party').forEach(button => {
+                button.addEventListener('click', removeParty);
+            });
+            
+            // Add a party member
+            document.querySelectorAll('.add-member-btn').forEach(button => {
+                button.addEventListener('click', addPartyMember);
+            });
+            
+            // Setup events for all party cards
+            function setupPartyCardEvents(partyCard) {
+                const removeBtn = partyCard.querySelector('.remove-party');
+                if (removeBtn) {
+                    removeBtn.addEventListener('click', removeParty);
+                }
+                
+                const addMemberBtn = partyCard.querySelector('.add-member-btn');
+                if (addMemberBtn) {
+                    addMemberBtn.addEventListener('click', addPartyMember);
+                }
+            }
+            
+            // Handler for removing a party
+            function removeParty() {
+                const partyCard = this.closest('.party-card');
+                if (document.querySelectorAll('.party-card').length > 1) {
+                    partyCard.remove();
+                    
+                    // Update party count
+                    partyCount--;
+                    document.getElementById('party_count').value = partyCount;
+                    
+                    // Update party indices
+                    document.querySelectorAll('.party-card').forEach((card, index) => {
+                        card.dataset.partyIndex = index;
+                        card.querySelector('h5').textContent = `Party ${index + 1}`;
+                        
+                        // Update form field IDs and names
+                        updateElementAttributes(card, 'input', 'id', /party_name_\d+/, `party_name_${index}`);
+                        updateElementAttributes(card, 'input', 'name', /party_name_\d+/, `party_name_${index}`);
+                        updateElementAttributes(card, 'input', 'id', /party_image_\d+/, `party_image_${index}`);
+                        updateElementAttributes(card, 'input', 'name', /party_image_\d+/, `party_image_${index}`);
+                        updateElementAttributes(card, 'label', 'for', /party_name_\d+/, `party_name_${index}`);
+                        updateElementAttributes(card, 'label', 'for', /party_image_\d+/, `party_image_${index}`);
+                        
+                        // Update member related attributes
+                        updateElementAttributes(card, 'div', 'id', /members_list_\d+/, `members_list_${index}`);
+                        updateElementAttributes(card, 'input', 'id', /new_member_name_\d+/, `new_member_name_${index}`);
+                        updateElementAttributes(card, 'input', 'id', /new_member_position_\d+/, `new_member_position_${index}`);
+                        
+                        // Update button attributes
+                        const removeBtn = card.querySelector('.remove-party');
+                        if (removeBtn) {
+                            removeBtn.dataset.partyIndex = index;
+                        }
+                        
+                        const addMemberBtn = card.querySelector('.add-member-btn');
+                        if (addMemberBtn) {
+                            addMemberBtn.dataset.partyIndex = index;
+                            addMemberBtn.dataset.partyName = card.querySelector(`#party_name_${index}`).value;
+                        }
+                    });
+                } else {
+                    alert("You must have at least one party.");
+                }
+            }
+            
+            // Helper function to update element attributes
+            function updateElementAttributes(container, selector, attribute, pattern, replacement) {
+                container.querySelectorAll(selector).forEach(element => {
+                    const currentValue = element.getAttribute(attribute);
+                    if (currentValue && pattern.test(currentValue)) {
+                        element.setAttribute(attribute, replacement);
+                    }
+                });
+            }
+            
+            // Add a party member via AJAX
+            function addPartyMember() {
+                const partyIndex = this.dataset.partyIndex;
+                const partyName = document.getElementById(`party_name_${partyIndex}`).value;
+                
+                if (!partyName) {
+                    alert("Please enter a party name first.");
+                    return;
+                }
+                
+                const nameInput = document.getElementById(`new_member_name_${partyIndex}`);
+                const positionInput = document.getElementById(`new_member_position_${partyIndex}`);
+                
+                const name = nameInput.value.trim();
+                const position = positionInput.value.trim();
+                
+                if (!name || !position) {
+                    alert("Please enter both name and position.");
+                    return;
+                }
+                
+                // Make an AJAX request to add the member
+                fetch('/api/party_members/add', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        party_name: partyName,
+                        name: name,
+                        position: position
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Clear the input fields
+                        nameInput.value = '';
+                        positionInput.value = '';
+                        
+                        // Reload the member list
+                        loadPartyMembers(partyName, partyIndex);
+                    } else {
+                        alert(data.message || "Failed to add member.");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("An error occurred. Please try again.");
+                });
+            }
+            
+            // Load party members via AJAX
+            function loadPartyMembers(partyName, partyIndex) {
+                const membersContainer = document.getElementById(`members_list_${partyIndex}`);
+                
+                fetch(`/api/party_members?party_name=${encodeURIComponent(partyName)}`)
+                .then(response => response.json())
+                .then(data => {
+                    membersContainer.innerHTML = '';
+                    
+                    if (data.members.length === 0) {
+                        membersContainer.innerHTML = '<p class="text-muted">No members added yet</p>';
+                        return;
+                    }
+                    
+                    const template = document.getElementById('member-template').innerHTML;
+                    
+                    data.members.forEach(member => {
+                        const memberHtml = template
+                            .replace(/{name}/g, member.name)
+                            .replace(/{position}/g, member.position)
+                            .replace(/{id}/g, member.id);
+                        
+                        const tempDiv = document.createElement('div');
+                        tempDiv.innerHTML = memberHtml;
+                        const memberElement = tempDiv.firstElementChild;
+                        
+                        // Add remove event listener
+                        memberElement.querySelector('.remove-member-btn').addEventListener('click', function() {
+                            removePartyMember(member.id, partyName, partyIndex);
+                        });
+                        
+                        membersContainer.appendChild(memberElement);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    membersContainer.innerHTML = '<p class="text-danger">Failed to load members</p>';
+                });
+            }
+            
+            // Remove a party member via AJAX
+            function removePartyMember(memberId, partyName, partyIndex) {
+                if (!confirm("Are you sure you want to remove this member?")) {
+                    return;
+                }
+                
+                fetch('/api/party_members/remove', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        member_id: memberId
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Reload the member list
+                        loadPartyMembers(partyName, partyIndex);
+                    } else {
+                        alert(data.message || "Failed to remove member.");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert("An error occurred. Please try again.");
+                });
+            }
+            
+            // Update party name event handlers
+            document.querySelectorAll('[id^="party_name_"]').forEach(input => {
+                input.addEventListener('change', function() {
+                    const partyIndex = this.id.replace('party_name_', '');
+                    const addMemberBtn = document.querySelector(`.add-member-btn[data-party-index="${partyIndex}"]`);
+                    if (addMemberBtn) {
+                        addMemberBtn.dataset.partyName = this.value;
+                    }
+                });
+            });
+            
+            // Handle form submission with AJAX
+            document.getElementById('parties-form').addEventListener('submit', function(event) {
+                event.preventDefault();
+                
+                // Check for unsaved members
+                const unsavedNames = document.querySelectorAll('.member-name');
+                const unsavedPositions = document.querySelectorAll('.member-position');
+                
+                for (let i = 0; i < unsavedNames.length; i++) {
+                    if (unsavedNames[i].value.trim() && unsavedPositions[i].value.trim()) {
+                        if (!confirm("You have unsaved party members. Continue anyway?")) {
+                            return;
+                        }
+                        break;
+                    }
+                }
+
+                // Submit form data using AJAX
+                const formData = new FormData(this);
+                fetch('/admin/manage_parties', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    if (data.success) {
+                        // Silently reload this page without showing messages
+                        window.location.reload();
+                    } else {
+                        throw new Error(data.message || "Failed to save changes");
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger alert-dismissible fade show';
+                    alertDiv.innerHTML = `
+                        Error saving changes. Please try again.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    document.getElementById('flash-messages').appendChild(alertDiv);
+                });
+            });
+        });
+    </script>
+</body>
+</html>

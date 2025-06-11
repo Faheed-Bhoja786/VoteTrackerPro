@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ site_title }} | {{ site_subtitle }}</title>
+  <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="/static/css/style.css">
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.js"></script>
+  <!-- Sound effects -->
+  <audio id="vote-success-sound" src="/static/sounds/vote-success.mp3" preload="auto"></audio>
+  <audio id="vote-error-sound" src="/static/sounds/vote-error.mp3" preload="auto"></audio>
+  <!-- Winner sound removed as requested -->
+
+  <style>
+    /* Additional styles for winner announcement */
+    .winner-celebration {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background-color: rgba(0, 0, 0, 0.8);
+      overflow: hidden;
+    }
+
+    #confetti-canvas {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1001;
+      pointer-events: none;
+    }
+
+    .winner-announcement {
+      z-index: 1002;
+      background-color: rgba(20, 20, 40, 0.85);
+      border-radius: 15px;
+      padding: 2rem;
+      text-align: center;
+      max-width: 90%;
+      max-height: 90vh;
+      overflow-y: auto;
+      box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
+      animation: winner-glow 2s infinite alternate;
+    }
+
+    @keyframes winner-glow {
+      from { box-shadow: 0 0 30px rgba(255, 215, 0, 0.6); }
+      to { box-shadow: 0 0 50px rgba(255, 215, 0, 0.9); }
+    }
+
+    .winner-announcement h2 {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      color: gold;
+      text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
+    }
+
+    .winner-announcement h3 {
+      font-size: 2.5rem;
+      margin-bottom: 1.5rem;
+      color: white;
+    }
+
+    .winner-image-container {
+      margin: 1.5rem auto;
+      max-width: 300px;
+      max-height: 300px;
+    }
+
+    .winner-image-container img {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+    }
+
+    .winner-details {
+      margin-top: 1.5rem;
+      text-align: center;
+    }
+
+    .winner-vote-count {
+      font-size: 1.8rem;
+      color: #ffd700;
+      margin-bottom: 1rem;
+    }
+
+    .party-members-container {
+      margin-top: 2rem;
+      background-color: rgba(30, 30, 60, 0.7);
+      border-radius: 10px;
+      padding: 1.5rem;
+    }
+
+    .party-members-container h4 {
+      color: #ffd700;
+      margin-bottom: 1rem;
+      font-size: 1.5rem;
+    }
+
+    .party-member {
+      margin-bottom: 1rem;
+      padding: 0.75rem;
+      background-color: rgba(50, 50, 80, 0.5);
+      border-radius: 8px;
+    }
+
+    .party-member .name {
+      font-size: 1.2rem;
+      font-weight: bold;
+      color: white;
+    }
+
+    .party-member .position {
+      font-size: 1rem;
+      color: #aaaaff;
+      font-style: italic;
+    }
+
+    /* Form styles */
+    .voter-info {
+      max-width: 300px;
+      margin: 0 auto 1rem;
+    }
+
+    .voter-info input {
+      padding: 8px;
+      font-size: 14px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .voting-section {
+      text-align: center;
+      margin-top: 1rem;
+    }
+
+    .voting-section h3 {
+      margin-bottom: 1rem;
+    }
+
+    .form-label {
+      text-align: left;
+      display: block;
+      margin-bottom: 0.25rem;
+      font-size: 14px;
+    }
+
+    .site-title {
+      margin-bottom: 0.5rem;
+    }
+
+    .site-subtitle {
+      margin-bottom: 1rem;
+    }
+
+    .header {
+      margin-bottom: 1.5rem;
+    }
+
+    /* Fireworks animation */
+    .pyro {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 1000;
+      pointer-events: none;
+    }
+
+    .pyro > .before, .pyro > .after {
+      position: absolute;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      box-shadow: 0 0 #fff, 0 0 #fff, 0 0 #fff, 0 0 #fff, 0 0 #fff, 0 0 #fff, 0 0 #fff, 0 0 #fff;
+      animation: 1s bang ease-out infinite backwards, 1s gravity ease-in infinite backwards, 5s position linear infinite backwards;
+    }
+
+    .pyro > .after {
+      animation-delay: 1.25s, 1.25s, 1.25s;
+      animation-duration: 1.25s, 1.25s, 6.25s;
+    }
+
+    @keyframes bang {
+      to {
+        box-shadow: -70px -115.67px #00ff84, 135px -28.67px #a600ff, 176px 8.33px #ff00d0, 28px -51.67px #ff006a, -37px 44.33px #ff0037, -134px -91.67px #00ff91, -129px -81.67px #0026ff, 119px -90.67px red;
+      }
+    }
+
+    @keyframes gravity {
+      to {
+        transform: translateY(200px);
+        opacity: 0;
+      }
+    }
+
+    @keyframes position {
+      0%, 19.9% {
+        margin-top: 10%;
+        margin-left: 40%;
+      }
+      20%, 39.9% {
+        margin-top: 40%;
+        margin-left: 30%;
+      }
+      40%, 59.9% {
+        margin-top: 20%;
+        margin-left: 70%;
+      }
+      60%, 79.9% {
+        margin-top: 30%;
+        margin-left: 20%;
+      }
+      80%, 99.9% {
+        margin-top: 30%;
+        margin-left: 80%;
+      }
+    }
+
+    .party-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 2rem;
+      margin: 1rem 0;
+      width: 100%;
+      padding: 0 1rem;
+    }
+
+    .party-card-vote {
+      background: white;
+      border-radius: 8px;
+      padding: 1.5rem;
+      text-align: center;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      width: 100%;
+      max-width: 350px;
+      margin: 0 auto;
+    }
+
+    .party-candidate-image {
+      width: 180px;
+      height: 180px;
+      object-fit: cover;
+      object-position: center 20%;
+      margin: 0 auto;
+      border-radius: 50%;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+  </style>
+</head>
+<body>
+  <div class="container mt-4">
+    <div class="header text-center mb-5">
+      <img src="/static/{{ logo_path }}" alt="{{ site_title }}" class="site-logo mb-3">
+      <h1 class="site-title">{{ site_title }}</h1>
+      <h2 class="site-subtitle">{{ site_subtitle }}</h2>
+    </div>
+
+    {% if admin_message %}
+      <div class="admin-message alert alert-info" id="admin-message">
+        <p>{{ admin_message }}</p>
+      </div>
+      <script>
+        // Make admin message disappear after 3 seconds
+        setTimeout(function() {
+          document.getElementById('admin-message').style.display = 'none';
+        }, 3000);
+      </script>
+    {% endif %}
+
+    <!-- Winner celebration is now only displayed on the live results page -->
+
+    {% if election_open %}
+      {{ countdown_html | safe }}
+      <div class="voting-section">
+        <h3>Cast Your Vote</h3>
+        
+        {% if message and message != "Voting system updated - reloading page..." %}
+          <div class="alert alert-{{ message_class }} mb-4 message-alert" id="vote-message">
+            {{ message }}
+          </div>
+          <script>
+            // Make vote messages disappear after 3 seconds
+            setTimeout(function() {
+              const messageElement = document.getElementById('vote-message');
+              if (messageElement) {
+                messageElement.style.opacity = '0';
+                setTimeout(() => messageElement.style.display = 'none', 500);
+              }
+            }, 3000);
+          </script>
+        {% endif %}
+        
+        <form id="voting-form" method="post" onsubmit="return validateForm(event)">
+          <div class="voter-info">
+            <div class="mb-3">
+              <label for="voter-name" class="form-label">Your Name</label>
+              <input type="text" id="voter-name" name="voter_name" class="form-control" required>
+            </div>
+            <div class="mb-3">
+              <label for="voter-id" class="form-label">ID Number</label>
+              <input type="text" id="voter-id" name="voter_id" class="form-control" maxlength="9" required>
+              <div class="invalid-feedback" id="id-error" style="display: none; color: red; font-weight: bold; margin-top: 5px;"></div>
+            </div>
+          </div>
+
+          <div class="party-selection">
+            <div class="party-grid">
+              {% for party, data in votes.items() %}
+                <div class="party-card-vote" data-party="{{ party }}">
+                  <h4 class="party-name">{{ party }}</h4>
+                  <img src="/static/{{ data['image'] }}" alt="{{ party }}" class="party-candidate-image">
+                  <div class="vote-count-container-large">
+                    <div class="vote-count">{{ data["count"] }}</div>
+                    <div class="vote-label">votes</div>
+                  </div>
+                  <div class="vote-button-container">
+                    <input type="radio" name="vote" id="party-{{ loop.index }}" value="{{ party }}" class="vote-radio" required>
+                    <label for="party-{{ loop.index }}" class="vote-button">Select</label>
+                  </div>
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <button type="submit" class="btn btn-lg btn-primary w-100 mt-4">Confirm Vote</button>
+        </form>
+      </div>
+    {% else %}
+      <div class="alert alert-warning text-center">
+        <h4>Voting is currently closed.</h4>
+        {% if admin_message %}
+          <p>{{ admin_message }}</p>
+        {% endif %}
+      </div>
+      
+      {% if message and message != "Voting system updated - reloading page..." %}
+        <div class="alert alert-{{ message_class }} mt-4 message-alert" id="vote-message">
+          {{ message }}
+        </div>
+        <script>
+          // Make vote messages disappear after 3 seconds
+          setTimeout(function() {
+            const messageElement = document.getElementById('vote-message');
+            if (messageElement) {
+              messageElement.style.opacity = '0';
+              setTimeout(() => messageElement.style.display = 'none', 500);
+            }
+          }, 3000);
+        </script>
+      {% endif %}
+    {% endif %}
+
+    <footer class="footer">
+      <p><strong>Secure Electronic Voting System Built by Faheed Irfan Bhoja</strong></p>
+      <p><a href="/admin" class="admin-link" target="_blank">Election Administrator</a></p>
+    </footer>
+  </div>
+
+  <script>
+    // Use regular polling instead of SSE for better performance
+    function updateVoteCounts() {
+      // Clear any old EventSource connections
+      if (window.eventSource) {
+        window.eventSource.close();
+        window.eventSource = null;
+      }
+
+      fetch('/get_vote_counts')
+        .then(response => response.json())
+        .then(data => {
+          // Update vote counts
+          if (data.votes) {
+            for (const party in data.votes) {
+              const voteElements = document.querySelectorAll('.party-card-vote'); // Corrected selector
+              voteElements.forEach(element => {
+                const partyNameElement = element.querySelector('.party-name');
+                if (partyNameElement && partyNameElement.textContent === party) {
+                  const voteCountElement = element.querySelector('.vote-count');
+                  if (voteCountElement) {
+                    voteCountElement.textContent = data.votes[party].count;
+                  }
+                }
+              });
+            }
+          }
+
+          // Handle admin messages, but ignore system update messages
+          if (data.admin_message && !data.admin_message.includes("system updated")) {
+            // Remove any existing admin messages first
+            let existingMessage = document.getElementById('admin-message');
+            if (existingMessage) {
+              existingMessage.remove();
+            }
+
+            // Create new message element
+            let adminMessageElement = document.createElement('div');
+            adminMessageElement.id = 'admin-message';
+            adminMessageElement.className = 'admin-message';
+            adminMessageElement.innerHTML = `<p>${data.admin_message}</p>`;
+
+            // Add to document body for center screen positioning
+            document.body.appendChild(adminMessageElement);
+
+            // Setup timeout to remove message after 15 seconds
+            setTimeout(function() {
+              // Fade out animation
+              adminMessageElement.style.opacity = '0';
+              adminMessageElement.style.transition = 'opacity 0.5s ease';
+
+              // Remove element after animation
+              setTimeout(function() {
+                if (adminMessageElement && adminMessageElement.parentNode) {
+                  adminMessageElement.parentNode.removeChild(adminMessageElement);
+                }
+              }, 500);
+            }, 15000);
+          }
+
+          // Handle winner display - DISABLED on voting page
+          // Winner celebration is only shown on live_results.html now
+
+          // Handle election status changes - only reload in specific cases
+          if (data.election_open === false) {
+            // If election is closed
+            const votingSection = document.querySelector('.voting-section');
+            const warningAlert = document.querySelector('.alert-warning');
+
+            if (votingSection) {
+              votingSection.style.display = 'none';
+            }
+
+            if (warningAlert) {
+              warningAlert.style.display = 'block';
+            }
+
+            // Only reload the page if there is NO winner
+            // This prevents the infinite reload loop when a winner is declared
+            if (!data.winner && votingSection) {
+              // Use setTimeout to avoid immediate reload that can cause browser errors
+              setTimeout(function() {
+                window.location.reload();
+              }, 500);
+            }
+          } else {
+            // If election is open
+            const votingSection = document.querySelector('.voting-section');
+            const warningAlert = document.querySelector('.alert-warning');
+
+            if (votingSection) {
+              votingSection.style.display = 'block';
+            }
+
+            if (warningAlert) {
+              warningAlert.style.display = 'none';
+            }
+          }
+        })
+        .catch(error => {
+          console.log("Error updating data, will retry");
+        });
+    }
+
+    // Initial load of data when page loads
+    updateVoteCounts();
+
+    // Set interval for periodic refresh - check every second
+    setInterval(updateVoteCounts, 5000); // Reduced frequency to 5 seconds to improve performance
+
+    // Check for winner status regularly
+    function checkWinnerStatus() {
+      try {
+        fetch('/check_winner_status')
+          .then(response => {
+            if (!response.ok) {
+              throw new Error('Network response was not ok');
+            }
+            return response.json();
+          })
+          .then(data => {
+            // Don't redirect to live results - DISABLED
+          })
+          .catch(error => {
+            console.log('Error checking winner status - ignoring:', error);
+          });
+      } catch (error) {
+        console.log('Error in checkWinnerStatus function - ignoring:', error);
+      }
+    }
+
+    // Display winner celebration with detailed information
+    function displayWinnerCelebration(winnerDetails) {
+      const winnerCelebration = document.getElementById('winner-celebration');
+      const winnerName = document.getElementById('winner-name');
+      const winnerImageContainer = document.getElementById('winner-image-container');
+      const winnerVoteCount = document.getElementById('winner-vote-count');
+      const partyMembersList = document.getElementById('party-members-list');
+
+      // Set up the winner information
+      if (winnerDetails.parties && winnerDetails.parties.length > 0) {
+        const party = winnerDetails.parties[0]; // In case of tie, just show first winner for now
+
+        // Set winner name
+        winnerName.textContent = `${party.name} WINS!`;
+
+        // Set winner image
+        if (party.image) {
+          const winnerImage = document.createElement('img');
+          winnerImage.src = `/static/${party.image}`;
+          winnerImage.alt = party.name;
+          winnerImageContainer.innerHTML = '';
+          winnerImageContainer.appendChild(winnerImage);
+        }
+
+        // Set vote count
+        const totalVotes = winnerDetails.total_votes || 0;
+        const votePercentage = totalVotes > 0 ? Math.round((party.votes / totalVotes) * 100) : 0;
+        winnerVoteCount.textContent = `${party.votes} votes (${votePercentage}% of total)`;
+
+        // Add party members
+        partyMembersList.innerHTML = '';
+        if (party.members && party.members.length > 0) {
+          party.members.forEach(member => {
+            const memberElement = document.createElement('div');
+            memberElement.className = 'party-member';
+            memberElement.innerHTML = `
+              <div class="name">${member.name}</div>
+              <div class="position">${member.position}</div>
+            `;
+            partyMembersList.appendChild(memberElement);
+          });
+        } else {
+          partyMembersList.innerHTML = '<p>No members registered</p>';
+        }
+
+        // Show the celebration
+        winnerCelebration.style.display = 'flex';
+
+        // Winner sound removed as requested
+
+        // Launch confetti
+        launchConfetti();
+      }
+    }
+
+    // Launch confetti effect (optimized for better performance)
+    function launchConfetti() {
+      const duration = 10 * 1000; // Reduced duration to 10 seconds
+      const animationEnd = Date.now() + duration;
+      const defaults = { startVelocity: 30, spread: 360, ticks: 40, zIndex: 0 }; // Reduced ticks
+
+      function randomInRange(min, max) {
+        return Math.random() * (max - min) + min;
+      }
+
+      const interval = setInterval(function() {
+        const timeLeft = animationEnd - Date.now();
+
+        if (timeLeft <= 0) {
+          return clearInterval(interval);
+        }
+
+        const particleCount = 30 * (timeLeft / duration); // Reduced particle count
+
+        // Launch confetti from two positions only
+        confetti(Object.assign({}, defaults, {
+          particleCount,
+          origin: { x: randomInRange(0.2, 0.3), y: Math.random() - 0.2 }
+        }));
+        confetti(Object.assign({}, defaults, {
+          particleCount,
+          origin: { x: randomInRange(0.7, 0.8), y: Math.random() - 0.2 }
+        }));
+      }, 500); // Reduced frequency (500ms instead of 250ms)
+    }
+
+    // Form validation function
+    function validateForm(event) {
+      const voterIdInput = document.getElementById('voter-id');
+      const voterId = voterIdInput.value.trim();
+      const errorElement = document.getElementById('id-error');
+
+      // Reset error state first
+      errorElement.style.display = 'none';
+      voterIdInput.classList.remove('is-invalid');
+      
+      // Check ID format
+      if (!/^\d{8,9}$/.test(voterId)) {
+        errorElement.textContent = 'ID must be exactly 8 or 9 digits.';
+        errorElement.style.display = 'block';
+        voterIdInput.classList.add('is-invalid');
+        // Play error sound
+        document.getElementById('vote-error-sound').play();
+        event.preventDefault();
+        return false;
+      }
+
+      // Check if voter ID has already been used
+      event.preventDefault(); // Prevent form submission until we check
+      
+      // Make async request to check if voter ID exists
+      fetch('/check_voter_id?voter_id=' + encodeURIComponent(voterId))
+        .then(response => response.json())
+        .then(data => {
+          if (data.exists) {
+            // Voter ID has already been used
+            errorElement.textContent = 'This ID has already voted.';
+            errorElement.style.display = 'block';
+            voterIdInput.classList.add('is-invalid');
+            // Play error sound
+            document.getElementById('vote-error-sound').play();
+          } else {
+            // ID is valid and not used yet, submit the form
+            document.getElementById('vote-success-sound').play();
+            document.getElementById('voting-form').submit();
+          }
+        })
+        .catch(error => {
+          console.error('Error checking voter ID:', error);
+          // If there's an error, let the form submit normally
+          document.getElementById('vote-success-sound').play();
+          document.getElementById('voting-form').submit();
+        });
+      
+      return false; // Always return false as we handle submission manually
+    }
+
+    // Check for winner status on page load
+    document.addEventListener('DOMContentLoaded', function() {
+      checkWinnerStatus();
+    });
+  </script>
+</body>
+</html>

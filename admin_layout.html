@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Admin Panel - Muslim Bhadala Jamaat Elections 2025</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      text-align: center;
+      background: #f8f9fa;
+      padding: 20px;
+      margin: 0;
+      color: #333;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      padding: 25px;
+      border-radius: 10px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+    }
+
+    h1 {
+      color: #1a5276;
+      margin-bottom: 5px;
+    }
+
+    h2 {
+      color: #2874a6;
+      margin-top: 30px;
+      border-bottom: 1px solid #eee;
+      padding-bottom: 10px;
+    }
+
+    input[type="text"], 
+    input[type="password"],
+    input[type="number"],
+    input[type="file"],
+    textarea {
+      width: 100%;
+      padding: 10px;
+      margin: 8px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      box-sizing: border-box;
+      font-family: 'Poppins', sans-serif;
+    }
+
+    button, .button {
+      background-color: #2874a6;
+      color: white;
+      padding: 10px 15px;
+      margin: 10px 0;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      font-family: 'Poppins', sans-serif;
+      transition: background-color 0.3s;
+      text-decoration: none;
+      display: inline-block;
+    }
+
+    button:hover, .button:hover {
+      background-color: #1a5276;
+    }
+
+    .reset-button {
+      background-color: #e74c3c;
+    }
+
+    .reset-button:hover {
+      background-color: #c0392b;
+    }
+
+    .winner-button {
+      background-color: #27ae60;
+    }
+
+    .winner-button:hover {
+      background-color: #219955;
+    }
+
+    .success, .error {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+
+    .success {
+      background-color: #d4edda;
+      color: #155724;
+    }
+
+    .error {
+      background-color: #f8d7da;
+      color: #721c24;
+    }
+
+    .logout {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+    }
+
+    .hint {
+      font-size: 14px;
+      color: #777;
+      margin-top: 5px;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+      text-align: left;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 5px;
+      font-weight: 500;
+    }
+
+    .admin-card {
+      margin: 30px auto;
+      max-width: 800px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .card-header {
+      background: linear-gradient(135deg, #1a5276, #2874a6);
+      color: white;
+      padding: 20px;
+      border-bottom: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .card-header h2 {
+      color: white;
+      margin-top: 0;
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+
+    .subtitle {
+      font-size: 16px;
+      opacity: 0.9;
+      margin-top: 5px;
+    }
+
+    .card-body {
+      padding: 30px;
+      background: white;
+    }
+
+    .form-actions {
+      margin-top: 30px;
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+    }
+
+    .current-logo {
+      margin: 15px 0;
+      background-color: #f8f9fa;
+      padding: 20px;
+      border-radius: 8px;
+      text-align: center;
+    }
+
+    .current-logo img {
+      max-width: 100%;
+      height: auto;
+      margin-bottom: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      padding: 5px;
+    }
+
+    .btn-secondary {
+      background-color: #6c757d;
+    }
+
+    .btn-secondary:hover {
+      background-color: #5a6268;
+    }
+
+    .form-text {
+      font-size: 14px;
+      color: #6c757d;
+      margin-top: 5px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        padding: 15px;
+      }
+
+      .logout {
+        position: static;
+        margin: 10px 0;
+      }
+
+      .form-actions {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Admin Panel</h1>
+    <h2>Muslim Bhadala Jamaat Elections 2025</h2>
+
+    <a href="{{ url_for('admin_logout') }}" class="button logout">Logout</a>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="{{ category }}">{{ message }}</div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    {% block content %}
+    {% endblock %}
+
+    <div style="margin-top: 30px;">
+      <a href="{{ url_for('admin_dashboard') }}" class="button">Back to Dashboard</a>
+    </div>
+  </div>
+  <footer style="text-align: center; margin-top: 20px; font-size: 14px;">Secure Electronic Voting System Built by Faheed Irfan Bhoja</footer>
+</body>
+</html>
